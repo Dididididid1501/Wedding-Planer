@@ -13,7 +13,6 @@ export class BudgetView {
         this.onRemovePayment = null;
     }
 
-    // Основной рендер секции
     render(expenses) {
         const html = `
             <div class="add-card-tg">
@@ -47,6 +46,7 @@ export class BudgetView {
                 <table class="budget-table-tg">
                     <thead>
                         <tr>
+                            <th style="width:40px;">№</th>
                             <th>Статья</th>
                             <th>Бюджет</th>
                             <th>Отв.</th>
@@ -71,7 +71,7 @@ export class BudgetView {
     renderTableBody(expenses) {
         const tbody = this.container.querySelector('#expenseTbody');
         tbody.innerHTML = '';
-        expenses.forEach(exp => {
+        expenses.forEach((exp, idx) => {
             const paid = exp.payments.reduce((s, p) => s + (p.isPaid ? p.amount : 0), 0);
             let paymentsHtml = '<div style="display:flex; flex-direction:column; gap:4px;">';
             exp.payments.forEach((p, i) => {
@@ -88,6 +88,7 @@ export class BudgetView {
 
             const row = document.createElement('tr');
             row.innerHTML = `
+                <td>${idx + 1}</td>
                 <td><strong>${escapeHtml(exp.category)}</strong></td>
                 <td>${formatMoney(exp.planned)}</td>
                 <td><span class="compact-badge">${escapeHtml(exp.responsible)}</span></td>
@@ -120,7 +121,6 @@ export class BudgetView {
     }
 
     attachEvents() {
-        // Добавление расхода
         const addBtn = this.container.querySelector('#addExpenseBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => {
@@ -134,37 +134,31 @@ export class BudgetView {
             });
         }
 
-        // Делегирование событий внутри таблицы
         const tbody = this.container.querySelector('#expenseTbody');
         if (tbody) {
             tbody.addEventListener('click', (e) => {
                 const target = e.target;
-                // Чекбокс оплаты
                 if (target.classList.contains('payment-check')) {
                     const expId = target.dataset.expId;
                     const idx = target.dataset.idx;
                     if (this.onPaymentCheck) this.onPaymentCheck(expId, idx, target.checked);
                 }
-                // Удаление платежа
                 if (target.closest('.remove-payment')) {
                     const btn = target.closest('.remove-payment');
                     const expId = btn.dataset.expId;
                     const idx = btn.dataset.idx;
                     if (this.onRemovePayment) this.onRemovePayment(expId, idx);
                 }
-                // Добавление платежа
                 if (target.closest('.add-payment-btn')) {
                     const btn = target.closest('.add-payment-btn');
                     const expId = btn.dataset.expId;
                     if (this.onAddPayment) this.onAddPayment(expId);
                 }
-                // Редактирование
                 if (target.closest('.edit-expense')) {
                     const btn = target.closest('.edit-expense');
                     const expId = btn.dataset.id;
                     if (this.onEditExpense) this.onEditExpense(expId);
                 }
-                // Удаление расхода
                 if (target.closest('.delete-expense')) {
                     const btn = target.closest('.delete-expense');
                     const expId = btn.dataset.id;
@@ -189,7 +183,6 @@ export class BudgetView {
         }
     }
 
-    // Обновление сводки (вызывается из контроллера)
     updateSummary(stats) {
         const summary = document.getElementById('expensesSummary');
         if (summary) {
@@ -197,7 +190,6 @@ export class BudgetView {
         }
     }
 
-    // Метод для отображения модального окна редактирования (заполняет форму)
     populateEditForm(expense, formContainer) {
         formContainer.innerHTML = `
             <div class="input-group">
@@ -246,7 +238,6 @@ export class BudgetView {
         });
     }
 
-    // Получить данные из формы редактирования
     getEditFormData() {
         const category = document.getElementById('editExpCategory')?.value.trim() || 'Статья';
         const planned = parseFloat(document.getElementById('editExpPlanned')?.value) || 0;
@@ -268,13 +259,11 @@ export class BudgetView {
         return { category, planned, responsible, notes, payments };
     }
 
-    // Привязать обработчик добавления платежа в модалке
     bindEditPaymentAdd(handler) {
         const btn = document.getElementById('addEditPaymentBtn');
         if (btn) btn.addEventListener('click', handler);
     }
 
-    // Привязать обработчик удаления платежа в модалке (через делегирование)
     bindEditPaymentRemove(handler) {
         const list = document.getElementById('editPaymentsList');
         if (list) {

@@ -20,3 +20,9 @@
     padding: 3px 8px;
     font-size: 0.7rem;
 }
+
+.budget-table-tg th:first-child,
+.budget-table-tg td:first-child {
+    width: 40px;
+    text-align: center;
+}

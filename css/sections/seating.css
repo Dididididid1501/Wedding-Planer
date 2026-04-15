@@ -1,38 +1,73 @@
+/* Панель инструментов */
+.seating-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Статистика */
+.global-stats {
+    background: #fafcff;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    color: #5e6f8d;
+    display: inline-block;
+    margin-right: auto;
+}
+
+/* Сетка столов */
 .tables-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    padding: 8px;
+    gap: 16px;
+    padding: 16px 20px;
+    background: #fafcff;
 }
 
+/* Карточка стола */
 .table-card {
-    background: #fff;
-    border-radius: 24px;
-    border: 1px solid #eef2f5;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #e2e6ea;
     width: 100%;
-    max-width: 360px;
-    margin: 0 auto;
-    transition: border 0.2s;
+    max-width: 320px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: box-shadow 0.2s, border-color 0.2s;
+    overflow: hidden;
+}
+
+.table-card:hover {
+    box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+    border-color: #cdd9ed;
 }
 
 .table-card.overflow {
-    background: #fff0f0;
     border-color: #e06c6c;
+    background: #fff9f9;
 }
 
 .table-card.conflict {
     border-color: #e06c6c;
-    background: #fff5f5;
 }
 
+/* Заголовок стола */
 .table-header {
-    background: #f8fafd;
     padding: 12px 14px;
-    border-radius: 24px 24px 0 0;
+    background: #f8fafd;
+    border-bottom: 1px solid #eef2f5;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.table-header span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1c1e21;
 }
 
 .table-capacity {
@@ -40,34 +75,45 @@
     align-items: center;
     gap: 6px;
     background: white;
-    padding: 4px 10px;
+    padding: 3px 10px;
     border-radius: 30px;
     font-size: 0.7rem;
+    border: 1px solid #e2e6ea;
 }
 
 .table-capacity input {
-    width: 55px;
-    background: #f4f6f9;
-    border-radius: 16px;
-    padding: 4px;
+    width: 50px;
+    background: transparent;
+    border: none;
+    padding: 4px 0;
     text-align: center;
+    font-weight: 600;
+    outline: none;
 }
 
+/* Список гостей */
 .guest-list {
     padding: 12px;
-    max-height: 280px;
+    max-height: 260px;
     overflow-y: auto;
-    min-height: 100px;
+    min-height: 80px;
+    background: #fff;
 }
 
 .guest-item {
     background: #f8fafd;
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 8px 12px;
-    margin-bottom: 8px;
-    border-left: 3px solid;
+    margin-bottom: 6px;
+    border-left: 4px solid transparent;
     cursor: grab;
     user-select: none;
+    transition: background 0.15s;
+    border: 1px solid #edf2f7;
+}
+
+.guest-item:hover {
+    background: #eef2f5;
 }
 
 .guest-item.dragging {
@@ -77,18 +123,18 @@
 
 .guest-name {
     font-weight: 600;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
     justify-content: space-between;
+    margin-bottom: 4px;
 }
 
 .guest-details {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-top: 6px;
     font-size: 0.65rem;
 }
 
@@ -96,35 +142,39 @@
     background: #fff;
     border-radius: 16px;
     padding: 2px 8px;
+    border: 1px solid #e9ecef;
+    color: #5c6f87;
 }
 
 .relation-groom { border-left-color: #4a90e2; }
 .relation-bride { border-left-color: #e26d5c; }
 .relation-other { border-left-color: #9b9b9b; }
 
+/* Футер стола */
 .table-footer {
-    padding: 8px 12px;
+    padding: 8px 14px;
     font-size: 0.7rem;
-    border-top: 1px solid #f0f2f5;
+    background: #fafcff;
+    border-top: 1px solid #eef2f5;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    background: #fafcff;
-    border-radius: 0 0 24px 24px;
+    color: #5e6f8d;
 }
 
-.free-seats { color: #358856; }
+.free-seats { color: #2ecc71; font-weight: 600; }
 .free-seats.warning { color: #e06c6c; }
-
-.global-stats {
-    background: #fafcff;
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 0.75rem;
-    margin-bottom: 12px;
-}
 
 .conflict-warning {
     color: #e06c6c;
-    font-size: 0.7rem;
-    margin-left: 8px;
+    font-size: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Адаптация под мобильные */
+@media (max-width: 640px) {
+    .tables-grid { padding: 12px; }
+    .table-card { max-width: 100%; }
 }

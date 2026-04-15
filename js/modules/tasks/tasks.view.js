@@ -11,9 +11,11 @@ export class TasksView {
         this.onDeleteTask = null;
         this.onMonthToggle = null;
         this.onFilterChange = null;
+        this.onShowTemplates = null;
+        this.onApplyTemplate = null;
     }
 
-    render(tasks, categories, progress, filter = { category: 'all', month: 'all', status: 'all' }) {
+    render(tasks, categories, progress, filter = { category: 'all', month: 'all', status: 'all' }, weddingDate = '') {
         const html = `
             <div class="add-task-card" style="padding-bottom: 8px;">
                 <div class="category-manager">
@@ -23,6 +25,7 @@ export class TasksView {
                     </div>
                     <button class="btn-tg btn-outline-tg" id="addCategoryBtn"><i class="fas fa-plus"></i> Добавить</button>
                     <button class="btn-tg btn-outline-tg" id="manageCategoriesBtn"><i class="fas fa-palette"></i> Управление</button>
+                    <button class="btn-tg btn-outline-tg" id="showTemplatesBtn"><i class="fas fa-copy"></i> Шаблоны</button>
                 </div>
                 <div id="categoriesList" class="category-list">${this.renderCategoriesList(categories)}</div>
             </div>
@@ -43,9 +46,40 @@ export class TasksView {
 
             <div class="table-wrapper">
                 <table class="tasks-table">
-                    <thead><tr><th>Задача</th><th>Категория</th><th>Ответственный</th><th>Начало</th><th>Дедлайн</th><th>Промежуточные этапы</th><th>Комментарий</th><th>Статус</th><th style="width:80px;"></th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">№</th>
+                            <th>Задача</th>
+                            <th>Категория</th>
+                            <th>Ответственный</th>
+                            <th>Начало</th>
+                            <th>Дедлайн</th>
+                            <th>Промежуточные этапы</th>
+                            <th>Комментарий</th>
+                            <th>Статус</th>
+                            <th style="width:80px;"></th>
+                        </tr>
+                    </thead>
                     <tbody id="tasksTbody">${this.renderTableBody(tasks, categories)}</tbody>
                 </table>
+            </div>
+
+            <!-- Модальное окно шаблонов -->
+            <div id="templatesModal" class="modal">
+                <div class="modal-content" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <h3>📋 Шаблоны задач</h3>
+                        <button class="icon-btn" id="closeTemplatesModalBtn"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="weddingDateSelector" style="margin-bottom: 20px; padding: 12px; background: #fafcff; border-radius: 16px;">
+                        <label style="font-weight:600; margin-right: 12px;">Дата свадьбы:</label>
+                        <input type="date" id="weddingDateInput" value="${weddingDate}" style="padding: 8px 12px; border-radius: 14px; border: 1px solid #e2e6ea;">
+                    </div>
+                    <div id="templatesList" class="templates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;"></div>
+                    <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                        <button class="btn-tg btn-outline-tg" id="closeTemplatesBtn">Закрыть</button>
+                    </div>
+                </div>
             </div>
         `;
         this.container.innerHTML = html;
@@ -110,7 +144,7 @@ export class TasksView {
     }
 
     renderTableBody(tasks, categories) {
-        return tasks.map(task => {
+        return tasks.map((task, idx) => {
             const cat = categories.find(c => c.name === task.category) || { color: '#e9ecef' };
             const statusClass = { planned: 'status-planned', progress: 'status-progress', done: 'status-done' }[task.status];
             const statusText = { planned: 'Запланировано', progress: 'В работе', done: 'Выполнено' }[task.status];
@@ -128,6 +162,7 @@ export class TasksView {
                 ? `<span class="comment-cell" title="${escapeHtml(task.comment)}"><i class="far fa-comment-dots comment-icon"></i> ${escapeHtml(task.comment.substring(0, 20))}${task.comment.length > 20 ? '…' : ''}</span>`
                 : '<span style="color:#ccc;">—</span>';
             return `<tr>
+                <td>${idx + 1}</td>
                 <td><strong class="${titleClass}">${escapeHtml(task.title)}</strong></td>
                 <td><span class="category-badge" style="background:${cat.color};">${escapeHtml(task.category)}</span></td>
                 <td><span class="resp-badge ${respClass}">${escapeHtml(task.responsible)}</span></td>
@@ -150,10 +185,15 @@ export class TasksView {
     }
 
     attachEvents() {
-        // Обработчики будут привязаны в контроллере
+        // Базовые обработчики будут привязаны в контроллере
+        const showTemplatesBtn = document.getElementById('showTemplatesBtn');
+        if (showTemplatesBtn) {
+            showTemplatesBtn.addEventListener('click', () => {
+                if (this.onShowTemplates) this.onShowTemplates();
+            });
+        }
     }
 
-    // Модалка управления категориями
     renderManageCategoriesModal(categories) {
         const list = document.getElementById('manageCategoriesList');
         if (!list) return;
@@ -173,7 +213,6 @@ export class TasksView {
         }).join('');
     }
 
-    // Модалка редактирования задачи
     renderEditTaskModal(task, categories) {
         const catOptions = categories.map(c => `<option value="${escapeHtml(c.name)}" ${task.category === c.name ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
         const monthOptions = MONTHS.map(m => `<option value="${m}" ${task.startMonth === m ? 'selected' : ''}>${capitalize(m)}</option>`).join('');
@@ -197,7 +236,6 @@ export class TasksView {
         document.getElementById('editMonthCheckboxes').innerHTML = checksHtml;
     }
 
-    // Получить данные из формы добавления
     getAddTaskFormData() {
         return {
             title: document.getElementById('taskTitle')?.value || '',
@@ -210,7 +248,6 @@ export class TasksView {
         };
     }
 
-    // Получить данные из формы редактирования
     getEditTaskFormData() {
         return {
             title: document.getElementById('editTaskTitle')?.value || '',
@@ -224,11 +261,54 @@ export class TasksView {
         };
     }
 
-    // Обновить сводку
     updateSummary(tasksCount, progressPercent) {
         const summary = document.getElementById('tasksSummary');
         if (summary) summary.textContent = `Всего задач: ${tasksCount} · Прогресс: ${progressPercent}%`;
         const badge = document.getElementById('tasksProgressBadge');
         if (badge) badge.textContent = `Выполнено: ${progressPercent}%`;
+    }
+
+    // Методы для работы с шаблонами
+    showTemplatesModal(templates, weddingDate) {
+        const modal = document.getElementById('templatesModal');
+        const dateInput = document.getElementById('weddingDateInput');
+        if (dateInput) dateInput.value = weddingDate || '';
+
+        const list = document.getElementById('templatesList');
+        list.innerHTML = templates.map(tpl => `
+            <div class="template-card" style="border:1px solid #e2e6ea; border-radius:20px; padding:16px; background:white;">
+                <div style="font-size:2rem; margin-bottom:8px;">${tpl.icon}</div>
+                <h4 style="margin-bottom:8px;">${escapeHtml(tpl.name)}</h4>
+                <p style="font-size:0.8rem; color:#5e6f8d; margin-bottom:16px;">${escapeHtml(tpl.description)}</p>
+                <button class="btn-tg btn-outline-tg apply-template-btn" data-template-id="${tpl.id}" style="width:100%;">Применить</button>
+            </div>
+        `).join('');
+
+        modal.style.display = 'flex';
+
+        // Привязка кнопок применения шаблона
+        list.querySelectorAll('.apply-template-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const templateId = btn.dataset.templateId;
+                const selectedDate = document.getElementById('weddingDateInput').value;
+                if (!selectedDate) {
+                    alert('Пожалуйста, выберите дату свадьбы');
+                    return;
+                }
+                if (this.onApplyTemplate) {
+                    this.onApplyTemplate(templateId, selectedDate);
+                }
+                this.hideTemplatesModal();
+            });
+        });
+
+        // Кнопки закрытия
+        document.getElementById('closeTemplatesModalBtn').addEventListener('click', () => this.hideTemplatesModal());
+        document.getElementById('closeTemplatesBtn').addEventListener('click', () => this.hideTemplatesModal());
+    }
+
+    hideTemplatesModal() {
+        const modal = document.getElementById('templatesModal');
+        if (modal) modal.style.display = 'none';
     }
 }

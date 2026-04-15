@@ -27,3 +27,9 @@
     font-weight: 700;
     margin-bottom: 6px;
 }
+
+.guests-table-tg th:first-child,
+.guests-table-tg td:first-child {
+    width: 40px;
+    text-align: center;
+}

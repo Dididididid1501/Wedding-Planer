@@ -28,19 +28,24 @@ export class GuestsView {
                     </select>
                 </div>
                 <button class="btn-tg btn-outline-tg" id="clearFiltersBtnGuests">Сбросить</button>
+                <button class="btn-tg" id="toggleAddFormBtn"><i class="fas fa-plus"></i> Новый гость</button>
             </div>
-            <div class="add-card-tg">
-                <div style="display:flex; flex-wrap:wrap; gap:16px;">
-                    ${this.renderGuestForm()}
-                </div>
-                <div style="margin-top:16px; text-align:center;">
-                    <button id="addGuestBtn" class="btn-tg">+ Добавить гостя</button>
+            <div id="addGuestFormContainer" style="display: none;">
+                <div class="add-card-tg">
+                    <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                        ${this.renderGuestForm()}
+                    </div>
+                    <div style="margin-top:16px; text-align:center;">
+                        <button id="addGuestBtn" class="btn-tg">+ Добавить гостя</button>
+                        <button id="cancelAddGuestBtn" class="btn-tg btn-outline-tg">Отмена</button>
+                    </div>
                 </div>
             </div>
             <div class="table-wrapper">
                 <table class="guests-table-tg">
                     <thead>
                         <tr>
+                            <th style="width:40px;">№</th>
                             <th>Имя</th><th>Пригл.</th><th>ЗАГС</th><th>Отнош.</th><th>Стол</th>
                             <th>Контакты</th><th>Логистика</th><th>Меню</th><th>Алкоголь</th>
                             <th>Заметка</th><th>Конфликт</th><th></th>
@@ -102,7 +107,7 @@ export class GuestsView {
     renderTableBody(guests) {
         const tbody = this.container.querySelector('#guestsTbody');
         tbody.innerHTML = '';
-        guests.forEach(g => {
+        guests.forEach((g, idx) => {
             const alcohol = [];
             if (g.champagne) alcohol.push('🥂');
             if (g.redWine) alcohol.push('🍷');
@@ -111,6 +116,7 @@ export class GuestsView {
             if (g.noAlcohol) alcohol.push('🚫');
             const row = document.createElement('tr');
             row.innerHTML = `
+                <td>${idx + 1}</td>
                 <td><strong>${escapeHtml(g.name)}</strong>${g.broughtBy ? '<br><small>приведён</small>' : ''}</td>
                 <td>${g.invited ? '✅' : '❌'}</td>
                 <td>${g.zags ? '✅' : '—'}</td>
@@ -179,7 +185,6 @@ export class GuestsView {
         // Обработчики будут привязаны в контроллере
     }
 
-    // Управление блоком "Приведёт"
     renderBringList(persons) {
         const list = document.getElementById('bringPersonsList');
         if (!list) return;
@@ -201,7 +206,6 @@ export class GuestsView {
         });
     }
 
-    // Получить данные из формы добавления гостя
     getAddFormData() {
         return {
             name: document.getElementById('guestName')?.value || '',
@@ -225,7 +229,6 @@ export class GuestsView {
         };
     }
 
-    // Получить список приведённых из формы
     getBringPersonsFromForm() {
         const persons = [];
         document.querySelectorAll('#bringPersonsList > div').forEach(div => {
@@ -237,7 +240,6 @@ export class GuestsView {
         return persons;
     }
 
-    // Очистить форму добавления
     clearAddForm() {
         const fields = ['guestName', 'guestEmail', 'guestAddress', 'guestTable', 'guestConflictGroup', 'guestNotes'];
         fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -248,7 +250,6 @@ export class GuestsView {
         this.renderBringList([]);
     }
 
-    // Заполнить форму редактирования
     populateEditForm(guest, formContainer) {
         formContainer.innerHTML = `
             <div class="input-group"><label>Имя</label><input type="text" id="editName" value="${escapeHtml(guest.name)}"></div>
@@ -290,5 +291,30 @@ export class GuestsView {
             notes: document.getElementById('editNotes')?.value || '',
             conflictGroup: document.getElementById('editConflictGroup')?.value || ''
         };
+    }
+
+    showAddForm() {
+        const container = document.getElementById('addGuestFormContainer');
+        if (container) container.style.display = 'block';
+        const toggleBtn = document.getElementById('toggleAddFormBtn');
+        if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-minus"></i> Скрыть форму';
+    }
+
+    hideAddForm() {
+        const container = document.getElementById('addGuestFormContainer');
+        if (container) container.style.display = 'none';
+        const toggleBtn = document.getElementById('toggleAddFormBtn');
+        if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-plus"></i> Новый гость';
+    }
+
+    toggleAddForm() {
+        const container = document.getElementById('addGuestFormContainer');
+        if (container) {
+            if (container.style.display === 'none') {
+                this.showAddForm();
+            } else {
+                this.hideAddForm();
+            }
+        }
     }
 }

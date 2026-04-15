@@ -13,14 +13,12 @@ export class SeatingView {
 
     render(tables, guestsByTable, unseatedCount, stats) {
         const html = `
-            <div class="add-card-tg">
+            <div class="seating-toolbar">
                 <div class="global-stats" id="seatingGlobalStats">${this.renderStats(stats)}</div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-                    <button id="addNewTableBtn" class="btn-tg btn-outline-tg">+ Добавить стол</button>
-                    <button id="autoFillTablesBtn" class="btn-tg btn-outline-tg"><i class="fas fa-magic"></i> Автозаполнение</button>
-                </div>
-                <div id="tablesGrid" class="tables-grid"></div>
+                <button id="addNewTableBtn" class="btn-tg btn-outline-tg"><i class="fas fa-plus"></i> Добавить стол</button>
+                <button id="autoFillTablesBtn" class="btn-tg btn-outline-tg"><i class="fas fa-magic"></i> Автозаполнение</button>
             </div>
+            <div id="tablesGrid" class="tables-grid"></div>
         `;
         this.container.innerHTML = html;
         this.renderTablesGrid(tables, guestsByTable);
@@ -58,53 +56,49 @@ export class SeatingView {
                     </div>
                 `;
             });
-            if (count === 0) guestsHtml = '<div style="text-align:center; padding:12px;">— пусто —</div>';
+            if (count === 0) guestsHtml = '<div style="text-align:center; padding:12px; color:#8f9bb3; font-size:0.8rem;">— пусто —</div>';
 
             const card = document.createElement('div');
             card.className = `table-card ${free < 0 ? 'overflow' : ''} ${hasConflict ? 'conflict' : ''}`;
             card.setAttribute('data-table-number', table.number);
             card.innerHTML = `
                 <div class="table-header">
-                    <span>Стол ${escapeHtml(table.number)} <button class="icon-btn table-settings-btn" data-table-id="${table.id}"><i class="fas fa-cog"></i></button></span>
-                    <div class="table-capacity"><i class="fas fa-users"></i><input type="number" class="capacity-input" data-id="${table.id}" value="${table.capacity}" min="1"> мест</div>
+                    <span>Стол ${escapeHtml(table.number)}</span>
+                    <div class="table-capacity">
+                        <i class="fas fa-user"></i>
+                        <input type="number" class="capacity-input" data-id="${table.id}" value="${table.capacity}" min="1">
+                    </div>
+                    <button class="icon-btn table-settings-btn" data-table-id="${table.id}"><i class="fas fa-cog"></i></button>
                 </div>
                 <div class="guest-list">${guestsHtml}</div>
                 <div class="table-footer">
-                    <span>👥 ${count}</span>
-                    <span class="free-seats ${free < 0 ? 'warning' : ''}">🪑 ${free < 0 ? 0 : free}</span>
+                    <span>👥 ${count} чел.</span>
+                    <span class="free-seats ${free < 0 ? 'warning' : ''}">🪑 ${free < 0 ? 0 : free} мест</span>
                     ${hasConflict ? '<span class="conflict-warning"><i class="fas fa-exclamation-triangle"></i> Конфликт</span>' : ''}
-                    <button class="icon-btn clear-table-btn" data-table-num="${table.number}"><i class="fas fa-trash-alt"></i></button>
+                    <button class="icon-btn clear-table-btn" data-table-num="${table.number}" title="Очистить стол"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `;
 
-            // Drag & drop
             card.addEventListener('dragover', e => e.preventDefault());
             card.addEventListener('drop', e => {
                 e.preventDefault();
                 const guestId = e.dataTransfer.getData('text/plain');
-                if (guestId) {
-                    this.handleDropOnTable(guestId, table.number);
-                }
+                if (guestId) this.handleDropOnTable(guestId, table.number);
             });
 
             grid.appendChild(card);
         });
 
-        // Общая зона для сброса (убрать со стола)
         grid.addEventListener('dragover', e => e.preventDefault());
         grid.addEventListener('drop', e => {
             e.preventDefault();
             const guestId = e.dataTransfer.getData('text/plain');
-            if (guestId && this.onChangeTable) {
-                this.onChangeTable(guestId, '');
-            }
+            if (guestId && this.onChangeTable) this.onChangeTable(guestId, '');
         });
     }
 
     handleDropOnTable(guestId, tableNumber) {
-        if (this.onChangeTable) {
-            this.onChangeTable(guestId, tableNumber);
-        }
+        if (this.onChangeTable) this.onChangeTable(guestId, tableNumber);
     }
 
     attachEvents() {
@@ -114,7 +108,6 @@ export class SeatingView {
         const autoBtn = this.container.querySelector('#autoFillTablesBtn');
         if (autoBtn) autoBtn.addEventListener('click', () => { if (this.onAutoSeat) this.onAutoSeat(); });
 
-        // Делегирование событий внутри сетки столов
         const grid = this.container.querySelector('#tablesGrid');
         if (grid) {
             grid.addEventListener('change', (e) => {
@@ -124,7 +117,6 @@ export class SeatingView {
                     if (this.onTableCapacityChange) this.onTableCapacityChange(id, value);
                 }
             });
-
             grid.addEventListener('click', (e) => {
                 const clearBtn = e.target.closest('.clear-table-btn');
                 if (clearBtn) {
@@ -144,7 +136,6 @@ export class SeatingView {
             });
         }
 
-        // Drag start для гостей (глобально, т.к. элементы создаются динамически)
         document.addEventListener('dragstart', (e) => {
             const guestItem = e.target.closest('.guest-item');
             if (guestItem) {
@@ -160,21 +151,17 @@ export class SeatingView {
         });
     }
 
-    // Привязать внешний обработчик для клика "Пересадить"
     setChangeTableClickHandler(handler) {
         this.onChangeTableClick = handler;
     }
 
-    // Модальное окно настроек стола
     showTableSettingsModal(table) {
         const modal = document.getElementById('tableSettingsModal');
         document.getElementById('tableSettingsNumber').value = table.number;
         document.getElementById('tableSettingsDefaultCapacity').value = table.defaultCapacity || 10;
         modal.style.display = 'flex';
-        return modal;
     }
 
-    // Модальное окно выбора стола для пересадки
     showChangeTableModal(tables, currentTable) {
         const modal = document.getElementById('changeTableModal');
         const select = document.getElementById('newTableSelect');
@@ -182,10 +169,8 @@ export class SeatingView {
             tables.map(t => `<option value="${t.number}" ${t.number === currentTable ? 'selected' : ''}>Стол ${t.number}</option>`).join('') +
             '<option value="__none__">Убрать со стола</option>';
         modal.style.display = 'flex';
-        return modal;
     }
 
-    // Обновление бейджа с нерассаженными
     updateUnseatedBadge(unseatedCount) {
         const badge = document.getElementById('unseatedBadge');
         if (badge) badge.innerHTML = `🚫 Не рассажены: ${unseatedCount}`;

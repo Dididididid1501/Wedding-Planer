@@ -1,77 +1,42 @@
 // js/app.js
 import { stateManager } from './core/storage.js';
-import { eventBus } from './core/events.js';
+import { eventBus, EVENTS } from './core/events.js';
+import { initProjectsModule } from './modules/projects/projects.init.js';
 import { initTasksModule } from './modules/tasks/tasks.init.js';
 import { initBudgetModule } from './modules/budget/budget.init.js';
 import { initGuestsModule } from './modules/guests/guests.init.js';
 import { initSeatingModule } from './modules/seating/seating.init.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Получаем текущее состояние
-    const state = stateManager.getState();
+let currentModules = {};
 
-    // Инициализация всех модулей
-    const tasksContainer = document.querySelector('#tasksContainer .section-content');
-    const expensesContainer = document.querySelector('#expensesContainer .section-content');
-    const guestsContainer = document.querySelector('#guestsContainer .section-content');
-    const seatingContainer = document.querySelector('#seatingContainer .section-content');
+// Обработчик сворачивания секций (вынесен отдельно)
+function headerClickHandler(e) {
+    if (e.target.closest('button, input, select')) return;
+    const header = e.currentTarget;
+    const section = header.dataset.section;
+    const container = document.getElementById(section + 'Container');
+    const isCollapsed = container.classList.toggle('collapsed');
 
-    // Модули могут возвращать экземпляры контроллеров (не обязательно сохранять)
-    initTasksModule(state, tasksContainer);
-    initBudgetModule(state, expensesContainer);
-    initGuestsModule(state, guestsContainer);
-    initSeatingModule(state, seatingContainer);
+    const project = stateManager.getActiveProject();
+    if (project) {
+        if (!project.data.sectionsCollapsed) project.data.sectionsCollapsed = {};
+        project.data.sectionsCollapsed[section] = isCollapsed;
+        stateManager.updateActiveProject({ sectionsCollapsed: project.data.sectionsCollapsed });
+    }
+}
 
-    // Применяем начальное состояние сворачивания секций
-    applySectionsCollapsed(state.sectionsCollapsed);
-
-    // Навешиваем обработчики на заголовки для сворачивания/разворачивания
+function attachHeaderListeners() {
     document.querySelectorAll('.tg-header').forEach(header => {
         const section = header.dataset.section;
         if (!section) return;
-
-        header.addEventListener('click', (e) => {
-            // Игнорируем клики по кнопкам, инпутам и селектам внутри заголовка
-            if (e.target.closest('button, input, select')) return;
-
-            const container = document.getElementById(section + 'Container');
-            const isCollapsed = container.classList.toggle('collapsed');
-
-            // Обновляем состояние в глобальном хранилище
-            const currentState = stateManager.getState();
-            currentState.sectionsCollapsed[section] = isCollapsed;
-            stateManager.setState({ sectionsCollapsed: currentState.sectionsCollapsed });
-        });
+        // Удаляем старый обработчик
+        header.removeEventListener('click', headerClickHandler);
+        header.addEventListener('click', headerClickHandler);
     });
-
-    // Подписываемся на события обновления состояния от модулей
-    eventBus.on('state:update', (updates) => {
-        // Модули передают частичные обновления (например, { tasks: newTasks })
-        // Обновляем состояние через менеджер, который сохранит в localStorage и уведомит подписчиков
-        stateManager.setState(updates);
-    });
-
-    // Дополнительно можно подписаться на глобальное изменение состояния,
-    // чтобы обновлять сводки или другие элементы вне модулей
-    stateManager.subscribe((newState) => {
-        // Например, обновить общую сводку в заголовке страницы (если нужно)
-        // Но каждый модуль уже подписан через eventBus на 'stateChanged'
-        // Здесь можно делать что-то кросс-модульное
-        eventBus.emit('stateChanged', newState);
-    });
-
-    // Закрытие модальных окон по клику на фон
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none';
-        }
-    });
-
-    // Инициализация drag & drop для рассадки (глобальные обработчики уже в seating.view)
-    // Но можно также подписаться на события, если нужно
-});
+}
 
 function applySectionsCollapsed(collapsedState) {
+    if (!collapsedState) return;
     Object.entries(collapsedState).forEach(([section, isCollapsed]) => {
         const container = document.getElementById(section + 'Container');
         if (container) {
@@ -83,3 +48,88 @@ function applySectionsCollapsed(collapsedState) {
         }
     });
 }
+
+function showProjectsList() {
+    // Скрываем основной интерфейс, показываем рабочий стол
+    document.getElementById('projectsContainer').style.display = 'block';
+    document.getElementById('appContainer').style.display = 'none';
+
+    // Очищаем модули, чтобы не было утечек памяти
+    currentModules = {};
+
+    const container = document.getElementById('projectsContainer');
+    container.innerHTML = '';
+
+    // Инициализируем модуль проектов
+    initProjectsModule(stateManager.getState(), container, (projectId) => {
+        // Колбэк при выборе проекта
+        stateManager.setActiveProject(projectId);
+        showActiveProject();
+    });
+}
+
+function showActiveProject() {
+    document.getElementById('projectsContainer').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'block';
+
+    const project = stateManager.getActiveProject();
+    if (!project) {
+        showProjectsList();
+        return;
+    }
+
+    // Обновляем название в хедере
+    document.getElementById('currentProjectName').textContent = project.name;
+
+    // Очищаем контейнеры модулей перед инициализацией
+    const tasksContainer = document.querySelector('#tasksContainer .section-content');
+    const expensesContainer = document.querySelector('#expensesContainer .section-content');
+    const guestsContainer = document.querySelector('#guestsContainer .section-content');
+    const seatingContainer = document.querySelector('#seatingContainer .section-content');
+
+    if (tasksContainer) tasksContainer.innerHTML = '';
+    if (expensesContainer) expensesContainer.innerHTML = '';
+    if (guestsContainer) guestsContainer.innerHTML = '';
+    if (seatingContainer) seatingContainer.innerHTML = '';
+
+    // Инициализация модулей (без передачи state)
+    if (tasksContainer) currentModules.tasks = initTasksModule(tasksContainer);
+    if (expensesContainer) currentModules.budget = initBudgetModule(expensesContainer);
+    if (guestsContainer) currentModules.guests = initGuestsModule(guestsContainer);
+    if (seatingContainer) currentModules.seating = initSeatingModule(seatingContainer);
+
+    // Применяем состояние сворачивания секций
+    const collapsedState = project.data.sectionsCollapsed || stateManager.getState().sectionsCollapsed;
+    applySectionsCollapsed(collapsedState);
+
+    // Навешиваем обработчики сворачивания
+    attachHeaderListeners();
+}
+
+// ========== Глобальные обработчики ==========
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#switchProjectBtn')) {
+        showProjectsList();
+    }
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
+
+// Подписка на события обновления состояния
+eventBus.on(EVENTS.STATE_UPDATE, (updates) => {
+    stateManager.updateActiveProject(updates);
+});
+
+// Старт приложения
+document.addEventListener('DOMContentLoaded', () => {
+    const state = stateManager.getState();
+    if (state.activeProjectId) {
+        showActiveProject();
+    } else {
+        showProjectsList();
+    }
+});

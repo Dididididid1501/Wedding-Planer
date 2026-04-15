@@ -1,22 +1,21 @@
+// js/modules/seating/seating.controller.js
 import { SeatingModel } from './seating.model.js';
 import { SeatingView } from './seating.view.js';
-import { eventBus } from '../../core/events.js';
+import { eventBus, EVENTS } from '../../core/events.js';
+import { stateManager } from '../../core/storage.js';
 
 export class SeatingController {
-    constructor(state, container) {
-        this.state = state;
-        this.model = new SeatingModel(state);
+    constructor(container) {
+        this.container = container;
         this.view = new SeatingView(container);
+        this.model = null;
         this.currentTableSettingsId = null;
         this.currentChangeGuestId = null;
 
-        eventBus.on('stateChanged', () => this.refresh());
-        eventBus.on('guests:updated', () => {
-            this.model.syncTablesFromGuests();
-            this.refresh();
-        });
+        eventBus.on(EVENTS.PROJECT_SWITCHED, () => this.refresh());
+        eventBus.on(EVENTS.STATE_CHANGED, () => this.refresh());
+        eventBus.on(EVENTS.GUESTS_UPDATED, () => this.refresh());
 
-        // Привязка обработчиков View
         this.view.onAddTable = () => this.addTable();
         this.view.onAutoSeat = () => this.autoSeat();
         this.view.onTableCapacityChange = (id, value) => this.updateTableCapacity(id, value);
@@ -28,8 +27,29 @@ export class SeatingController {
         this.refresh();
     }
 
+    getProjectData() {
+        const project = stateManager.getActiveProject();
+        return project ? project.data : { tables: [], guests: [] };
+    }
+
+    saveProjectData(updates) {
+        const project = stateManager.getActiveProject();
+        if (project) {
+            Object.assign(project.data, updates);
+            stateManager.updateActiveProject(updates);
+            eventBus.emit(EVENTS.STATE_CHANGED);
+        }
+    }
+
     refresh() {
-        this.model.syncTablesFromGuests(); // Убедимся, что столы актуальны
+        const projectData = this.getProjectData();
+        const stateForModel = {
+            tables: projectData.tables || [],
+            guests: projectData.guests || []
+        };
+        this.model = new SeatingModel(stateForModel);
+        this.model.syncTablesFromGuests(); // при необходимости
+
         const tables = this.model.getAllTables();
         const guestsByTable = this.model.getGuestsByTable();
         const unseated = this.model.getUnseatedGuests().length;
@@ -39,67 +59,50 @@ export class SeatingController {
     }
 
     attachModalEvents() {
-        // Сохранение настроек стола
         const saveSettingsBtn = document.getElementById('saveTableSettingsBtn');
-        const cancelSettingsBtn = document.getElementById('cancelTableSettingsBtn');
-        const closeSettingsBtn = document.getElementById('closeTableSettingsModalBtn');
         if (saveSettingsBtn) {
             saveSettingsBtn.replaceWith(saveSettingsBtn.cloneNode(true));
             document.getElementById('saveTableSettingsBtn').addEventListener('click', () => this.saveTableSettings());
         }
+        const cancelSettingsBtn = document.getElementById('cancelTableSettingsBtn');
         if (cancelSettingsBtn) {
             cancelSettingsBtn.replaceWith(cancelSettingsBtn.cloneNode(true));
             document.getElementById('cancelTableSettingsBtn').addEventListener('click', () => this.closeTableSettingsModal());
         }
-        if (closeSettingsBtn) {
-            closeSettingsBtn.replaceWith(closeSettingsBtn.cloneNode(true));
-            document.getElementById('closeTableSettingsModalBtn').addEventListener('click', () => this.closeTableSettingsModal());
-        }
+        document.getElementById('closeTableSettingsModalBtn')?.addEventListener('click', () => this.closeTableSettingsModal());
 
-        // Сохранение пересадки
         const saveTableBtn = document.getElementById('saveTableBtn');
-        const cancelTableBtn = document.getElementById('cancelTableBtn');
-        const closeTableBtn = document.getElementById('closeTableModalBtn');
         if (saveTableBtn) {
             saveTableBtn.replaceWith(saveTableBtn.cloneNode(true));
             document.getElementById('saveTableBtn').addEventListener('click', () => this.saveTableChange());
         }
-        if (cancelTableBtn) {
-            cancelTableBtn.replaceWith(cancelTableBtn.cloneNode(true));
-            document.getElementById('cancelTableBtn').addEventListener('click', () => this.closeChangeTableModal());
-        }
-        if (closeTableBtn) {
-            closeTableBtn.replaceWith(closeTableBtn.cloneNode(true));
-            document.getElementById('closeTableModalBtn').addEventListener('click', () => this.closeChangeTableModal());
-        }
+        document.getElementById('cancelTableBtn')?.addEventListener('click', () => this.closeChangeTableModal());
+        document.getElementById('closeTableModalBtn')?.addEventListener('click', () => this.closeChangeTableModal());
     }
 
     addTable() {
         this.model.addTable();
-        eventBus.emit('state:update', { tables: this.state.tables });
+        this.saveProjectData({ tables: this.model.getAllTables() });
         this.refresh();
     }
 
     autoSeat() {
-        if (this.model.getUnseatedGuests().length === 0) {
-            alert('Все гости уже рассажены');
-            return;
-        }
+        if (this.model.getUnseatedGuests().length === 0) return alert('Все гости уже рассажены');
         this.model.autoSeat();
-        eventBus.emit('state:update', { guests: this.state.guests });
+        this.saveProjectData({ guests: this.model.getAllGuests() });
         this.refresh();
     }
 
     updateTableCapacity(id, capacity) {
         this.model.updateTable(id, { capacity });
-        eventBus.emit('state:update', { tables: this.state.tables });
+        this.saveProjectData({ tables: this.model.getAllTables() });
         this.refresh();
     }
 
     clearTable(tableNumber) {
         if (confirm(`Убрать всех гостей со стола ${tableNumber}?`)) {
             this.model.clearTable(tableNumber);
-            eventBus.emit('state:update', { guests: this.state.guests });
+            this.saveProjectData({ guests: this.model.getAllGuests() });
             this.refresh();
         }
     }
@@ -115,7 +118,7 @@ export class SeatingController {
         if (!this.currentTableSettingsId) return;
         const defaultCapacity = parseInt(document.getElementById('tableSettingsDefaultCapacity').value) || 10;
         this.model.updateTable(this.currentTableSettingsId, { defaultCapacity, capacity: defaultCapacity });
-        eventBus.emit('state:update', { tables: this.state.tables });
+        this.saveProjectData({ tables: this.model.getAllTables() });
         this.closeTableSettingsModal();
         this.refresh();
     }
@@ -126,7 +129,7 @@ export class SeatingController {
     }
 
     openChangeTableModal(guestId) {
-        const guest = this.state.guests.find(g => g.id === guestId);
+        const guest = this.model.getAllGuests().find(g => g.id === guestId);
         if (!guest) return;
         this.currentChangeGuestId = guestId;
         this.view.showChangeTableModal(this.model.getAllTables(), guest.table);
@@ -142,7 +145,7 @@ export class SeatingController {
 
     changeGuestTable(guestId, tableNumber) {
         this.model.seatGuest(guestId, tableNumber);
-        eventBus.emit('state:update', { guests: this.state.guests });
+        this.saveProjectData({ guests: this.model.getAllGuests() });
         this.refresh();
     }
 

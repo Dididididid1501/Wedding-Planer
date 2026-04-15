@@ -1,19 +1,21 @@
+// js/modules/guests/guests.controller.js
 import { GuestsModel } from './guests.model.js';
 import { GuestsView } from './guests.view.js';
-import { eventBus } from '../../core/events.js';
+import { eventBus, EVENTS } from '../../core/events.js';
+import { stateManager } from '../../core/storage.js';
 
 export class GuestsController {
-    constructor(state, container) {
-        this.state = state;
-        this.model = new GuestsModel(state);
+    constructor(container) {
+        this.container = container;
         this.view = new GuestsView(container);
+        this.model = null;
         this.currentEditId = null;
         this.filterName = '';
         this.filterRelation = 'all';
 
-        eventBus.on('stateChanged', () => this.refresh());
+        eventBus.on(EVENTS.PROJECT_SWITCHED, () => this.refresh());
+        eventBus.on(EVENTS.STATE_CHANGED, () => this.refresh());
 
-        // Привязка обработчиков
         this.view.onAddGuest = () => this.addGuest();
         this.view.onEditGuest = (id) => this.openEditModal(id);
         this.view.onDeleteGuest = (id) => this.deleteGuest(id);
@@ -26,7 +28,25 @@ export class GuestsController {
         this.refresh();
     }
 
+    getProjectData() {
+        const project = stateManager.getActiveProject();
+        return project ? project.data : { guests: [] };
+    }
+
+    saveProjectData(updates) {
+        const project = stateManager.getActiveProject();
+        if (project) {
+            Object.assign(project.data, updates);
+            stateManager.updateActiveProject(updates);
+            eventBus.emit(EVENTS.STATE_CHANGED);
+        }
+    }
+
     refresh() {
+        const projectData = this.getProjectData();
+        const stateForModel = { guests: projectData.guests || [] };
+        this.model = new GuestsModel(stateForModel);
+
         const filtered = this.model.filterGuests(this.filterName, this.filterRelation);
         this.view.setTotalGuestsCount(this.model.getAll().length);
         this.view.render(filtered, this.filterName, this.filterRelation);
@@ -35,11 +55,23 @@ export class GuestsController {
     }
 
     attachUIEvents() {
-        // Кнопка добавления гостя
+        // Аналогично предыдущей версии, но все вызовы сохранения используют saveProjectData
         const addBtn = document.getElementById('addGuestBtn');
         if (addBtn) addBtn.onclick = () => this.addGuest();
 
-        // Поиск и фильтр
+        const toggleBtn = document.getElementById('toggleAddFormBtn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => this.view.toggleAddForm());
+        }
+
+        const cancelBtn = document.getElementById('cancelAddGuestBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.view.hideAddForm();
+                this.view.clearAddForm();
+            });
+        }
+
         const searchInput = document.getElementById('searchGuestInput');
         const relationSelect = document.getElementById('filterRelationSelect');
         const clearBtn = document.getElementById('clearFiltersBtnGuests');
@@ -59,7 +91,6 @@ export class GuestsController {
             this.refresh();
         });
 
-        // Переключение блока "Приведёт"
         const bringSelect = document.getElementById('guestBringYesNo');
         if (bringSelect) bringSelect.addEventListener('change', (e) => {
             const fields = document.getElementById('guestBringFields');
@@ -67,7 +98,6 @@ export class GuestsController {
             if (e.target.value !== 'yes') this.view.renderBringList([]);
         });
 
-        // Добавление персоны в список приведённых
         const addBringBtn = document.getElementById('addBringPersonBtn');
         if (addBringBtn) addBringBtn.addEventListener('click', () => {
             const persons = this.view.getBringPersonsFromForm();
@@ -75,7 +105,6 @@ export class GuestsController {
             this.view.renderBringList(persons);
         });
 
-        // Делегирование кликов по таблице (редактирование/удаление)
         const tbody = document.getElementById('guestsTbody');
         if (tbody) {
             tbody.addEventListener('click', (e) => {
@@ -86,7 +115,6 @@ export class GuestsController {
             });
         }
 
-        // Удаление персоны из списка приведённых (делегирование)
         const bringList = document.getElementById('bringPersonsList');
         if (bringList) {
             bringList.addEventListener('click', (e) => {
@@ -119,15 +147,16 @@ export class GuestsController {
             ? this.view.getBringPersonsFromForm()
             : [];
         this.model.addGuest(formData, bringPersons);
-        eventBus.emit('state:update', { guests: this.state.guests });
+        this.saveProjectData({ guests: this.model.getAll() });
         this.view.clearAddForm();
+        this.view.hideAddForm();
         this.refresh();
     }
 
     deleteGuest(id) {
         if (confirm('Удалить гостя?')) {
             this.model.deleteGuest(id);
-            eventBus.emit('state:update', { guests: this.state.guests });
+            this.saveProjectData({ guests: this.model.getAll() });
             this.refresh();
         }
     }
@@ -145,7 +174,7 @@ export class GuestsController {
         const saveHandler = () => {
             const updates = this.view.getEditFormData();
             this.model.updateGuest(this.currentEditId, updates);
-            eventBus.emit('state:update', { guests: this.state.guests });
+            this.saveProjectData({ guests: this.model.getAll() });
             this.refresh();
             this.closeEditModal();
         };
@@ -182,6 +211,6 @@ export class GuestsController {
         if (summary) summary.innerText = `Всего: ${total} · Приглашено: ${invited}`;
         const badge = document.getElementById('totalGuestsBadge');
         if (badge) badge.innerText = `Всего: ${total}`;
-        eventBus.emit('guests:updated', { total, invited });
+        eventBus.emit(EVENTS.GUESTS_UPDATED, { total, invited });
     }
 }

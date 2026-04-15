@@ -1,20 +1,19 @@
+// js/modules/budget/budget.controller.js
 import { BudgetModel } from './budget.model.js';
 import { BudgetView } from './budget.view.js';
-import { eventBus } from '../../core/events.js';
+import { eventBus, EVENTS } from '../../core/events.js';
+import { stateManager } from '../../core/storage.js';
 
 export class BudgetController {
-    constructor(state, container) {
-        this.state = state;
-        this.model = new BudgetModel(state);
+    constructor(container) {
+        this.container = container;
         this.view = new BudgetView(container);
+        this.model = null;
         this.currentEditId = null;
 
-        // Подписка на глобальное обновление состояния
-        eventBus.on('stateChanged', () => {
-            this.refresh();
-        });
+        eventBus.on(EVENTS.PROJECT_SWITCHED, () => this.refresh());
+        eventBus.on(EVENTS.STATE_CHANGED, () => this.refresh());
 
-        // Привязка обработчиков View -> Controller
         this.view.onAddExpense = (data) => this.addExpense(data);
         this.view.onEditExpense = (id) => this.openEditModal(id);
         this.view.onDeleteExpense = (id) => this.deleteExpense(id);
@@ -24,53 +23,65 @@ export class BudgetController {
         this.view.onAddPayment = (expId) => this.addPayment(expId);
         this.view.onRemovePayment = (expId, idx) => this.removePayment(expId, idx);
 
-        // Инициализация отображения
         this.refresh();
     }
 
+    getProjectData() {
+        const project = stateManager.getActiveProject();
+        return project ? project.data : { expenses: [] };
+    }
+
+    saveProjectData(updates) {
+        const project = stateManager.getActiveProject();
+        if (project) {
+            Object.assign(project.data, updates);
+            stateManager.updateActiveProject(updates);
+            eventBus.emit(EVENTS.STATE_CHANGED);
+        }
+    }
+
     refresh() {
+        const projectData = this.getProjectData();
+        const stateForModel = { expenses: projectData.expenses || [] };
+        this.model = new BudgetModel(stateForModel);
+
         const expenses = this.model.getAll();
         this.view.render(expenses);
         const stats = this.model.getStats();
         this.view.updateSummary(stats);
-        // Эмитим событие, что бюджет обновлён (для обновления сводок в других модулях, если нужно)
-        eventBus.emit('budget:updated', stats);
+        eventBus.emit(EVENTS.BUDGET_UPDATED, stats);
     }
 
     addExpense(data) {
-        if (!data.category) {
-            alert('Введите название статьи');
-            return;
-        }
+        if (!data.category) return alert('Введите название статьи');
         this.model.add(data);
-        // Сохраняем состояние через глобальный stateManager (вызовется из app)
-        eventBus.emit('state:update', { expenses: this.state.expenses });
+        this.saveProjectData({ expenses: this.model.getAll() });
         this.refresh();
     }
 
     deleteExpense(id) {
         if (confirm('Удалить статью расхода?')) {
             this.model.delete(id);
-            eventBus.emit('state:update', { expenses: this.state.expenses });
+            this.saveProjectData({ expenses: this.model.getAll() });
             this.refresh();
         }
     }
 
     updatePayment(expId, idx, updates) {
         this.model.updatePayment(expId, idx, updates);
-        eventBus.emit('state:update', { expenses: this.state.expenses });
+        this.saveProjectData({ expenses: this.model.getAll() });
         this.refresh();
     }
 
     addPayment(expId) {
-        this.model.addPayment(expId, { amount: 0, isPaid: false });
-        eventBus.emit('state:update', { expenses: this.state.expenses });
+        this.model.addPayment(expId);
+        this.saveProjectData({ expenses: this.model.getAll() });
         this.refresh();
     }
 
     removePayment(expId, idx) {
         this.model.deletePayment(expId, idx);
-        eventBus.emit('state:update', { expenses: this.state.expenses });
+        this.saveProjectData({ expenses: this.model.getAll() });
         this.refresh();
     }
 
@@ -78,47 +89,41 @@ export class BudgetController {
         const expense = this.model.getById(id);
         if (!expense) return;
         this.currentEditId = id;
-
         const modal = document.getElementById('editExpenseModal');
         const formContainer = document.getElementById('editExpenseForm');
         this.view.populateEditForm(expense, formContainer);
 
-        // Привязка событий модалки
         this.view.bindEditPaymentAdd(() => {
-            // Добавить пустой платёж во временный массив и перерисовать
-            const expenseCopy = this.model.getById(this.currentEditId);
-            if (expenseCopy) {
-                expenseCopy.payments.push({ date: '', amount: 0, isPaid: false });
-                this.view.renderEditPaymentsList(expenseCopy.payments);
+            const exp = this.model.getById(this.currentEditId);
+            if (exp) {
+                exp.payments.push({ date: '', amount: 0, isPaid: false });
+                this.view.renderEditPaymentsList(exp.payments);
             }
         });
 
         this.view.bindEditPaymentRemove((idx) => {
-            const expenseCopy = this.model.getById(this.currentEditId);
-            if (expenseCopy) {
-                expenseCopy.payments.splice(idx, 1);
-                this.view.renderEditPaymentsList(expenseCopy.payments);
+            const exp = this.model.getById(this.currentEditId);
+            if (exp) {
+                exp.payments.splice(idx, 1);
+                this.view.renderEditPaymentsList(exp.payments);
             }
         });
 
         modal.style.display = 'flex';
 
-        // Обработчик сохранения (должен быть один раз)
-        const saveBtn = document.getElementById('saveExpenseEditBtn');
-        const cancelBtn = document.getElementById('cancelExpenseEditBtn');
-        const closeBtn = document.getElementById('closeExpenseModalBtn');
-
         const saveHandler = () => {
             const formData = this.view.getEditFormData();
             this.model.update(this.currentEditId, formData);
-            eventBus.emit('state:update', { expenses: this.state.expenses });
+            this.saveProjectData({ expenses: this.model.getAll() });
             this.refresh();
             this.closeEditModal();
         };
 
         const closeHandler = () => this.closeEditModal();
 
-        // Удаляем старые обработчики, чтобы не дублировались
+        const saveBtn = document.getElementById('saveExpenseEditBtn');
+        const cancelBtn = document.getElementById('cancelExpenseEditBtn');
+        const closeBtn = document.getElementById('closeExpenseModalBtn');
         saveBtn.replaceWith(saveBtn.cloneNode(true));
         cancelBtn.replaceWith(cancelBtn.cloneNode(true));
         closeBtn.replaceWith(closeBtn.cloneNode(true));
@@ -129,16 +134,13 @@ export class BudgetController {
     }
 
     closeEditModal() {
-        const modal = document.getElementById('editExpenseModal');
-        modal.style.display = 'none';
+        document.getElementById('editExpenseModal').style.display = 'none';
         this.currentEditId = null;
         window.removeEventListener('click', this.modalOutsideClickHandler);
     }
 
     modalOutsideClickHandler = (e) => {
         const modal = document.getElementById('editExpenseModal');
-        if (e.target === modal) {
-            this.closeEditModal();
-        }
+        if (e.target === modal) this.closeEditModal();
     };
 }

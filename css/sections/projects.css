@@ -1,0 +1,164 @@
+/* css/sections/projects.css */
+.projects-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px;
+}
+
+.projects-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.projects-header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1c1e21;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.project-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #eef2f5;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    border-color: #cdd9ed;
+}
+
+.project-card-actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 4px;
+}
+
+.project-card-actions .icon-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.project-card:hover .project-card-actions .icon-btn {
+    opacity: 1;
+}
+
+.project-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1c1e21;
+    padding-right: 60px; /* место под кнопки */
+}
+
+.project-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #5e6f8d;
+    margin-bottom: 20px;
+}
+
+.project-date i {
+    color: #3390ec;
+    width: 18px;
+}
+
+.date-value {
+    cursor: pointer;
+    border-bottom: 1px dashed #cdd9ed;
+}
+
+.date-value:hover {
+    color: #3390ec;
+    border-bottom-color: #3390ec;
+}
+
+.project-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    background: #fafcff;
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #8e9aaf;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1c1e21;
+}
+
+.project-progress {
+    margin-top: 4px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #5e6f8d;
+    margin-bottom: 6px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #3390ec;
+    border-radius: 20px;
+    transition: width 0.3s;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #8f9bb3;
+    font-size: 1.2rem;
+}
+
+/* Модальное окно проекта */
+#projectModal .modal-content {
+    max-width: 400px;
+}
+
+#projectModal .input-group {
+    margin-bottom: 16px;
+}
