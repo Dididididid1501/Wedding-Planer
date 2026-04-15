@@ -1,0 +1,172 @@
+.add-task-card {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eef2f5;
+    background: #fafcff;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.progress-section {
+    padding: 16px 20px;
+    background: #fafcff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.progress-bar-wrapper {
+    flex: 1;
+    min-width: 200px;
+}
+
+.progress-bar-stack {
+    height: 24px;
+    background: #e9ecef;
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex;
+}
+
+.progress-done { background: #2ecc71; height: 100%; transition: width 0.3s; }
+.progress-partial { background: #f39c12; height: 100%; transition: width 0.3s; }
+.progress-planned { background: #bdc3c7; height: 100%; transition: width 0.3s; }
+
+.progress-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 0.7rem;
+    margin-top: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+}
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.status-planned { background: #fff3cd; color: #856404; }
+.status-progress { background: #cfe2ff; color: #084298; }
+.status-done { background: #d1e7dd; color: #0f5132; }
+
+.category-badge {
+    display: inline-block;
+    border-radius: 30px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: #e9ecef;
+    color: #1c1e21;
+}
+
+.resp-badge {
+    display: inline-block;
+    border-radius: 30px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: #f0f3f8;
+}
+
+.resp-bride { background: #ffe6e6; color: #a13d3d; }
+.resp-groom { background: #e6f0ff; color: #2a5c9a; }
+.resp-family { background: #e6ffe6; color: #2e7d32; }
+.resp-agency { background: #f3e6ff; color: #6a3d9a; }
+.resp-other { background: #f0f0f0; color: #555; }
+
+.month-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 200px;
+}
+
+.month-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f4f6f9;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.task-title-done {
+    text-decoration: line-through;
+    color: #6c757d;
+}
+
+.comment-cell {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #5e6f8d;
+}
+
+.category-manager {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    margin: 12px 0;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.1s;
+}
+
+.color-option.selected {
+    border-color: #3390ec;
+    box-shadow: 0 0 0 2px rgba(51,144,236,0.3);
+}

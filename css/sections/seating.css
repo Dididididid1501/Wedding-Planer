@@ -1,0 +1,130 @@
+.tables-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 8px;
+}
+
+.table-card {
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid #eef2f5;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    transition: border 0.2s;
+}
+
+.table-card.overflow {
+    background: #fff0f0;
+    border-color: #e06c6c;
+}
+
+.table-card.conflict {
+    border-color: #e06c6c;
+    background: #fff5f5;
+}
+
+.table-header {
+    background: #f8fafd;
+    padding: 12px 14px;
+    border-radius: 24px 24px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.table-capacity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 0.7rem;
+}
+
+.table-capacity input {
+    width: 55px;
+    background: #f4f6f9;
+    border-radius: 16px;
+    padding: 4px;
+    text-align: center;
+}
+
+.guest-list {
+    padding: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    min-height: 100px;
+}
+
+.guest-item {
+    background: #f8fafd;
+    border-radius: 18px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid;
+    cursor: grab;
+    user-select: none;
+}
+
+.guest-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.guest-name {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.guest-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.65rem;
+}
+
+.detail-badge {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2px 8px;
+}
+
+.relation-groom { border-left-color: #4a90e2; }
+.relation-bride { border-left-color: #e26d5c; }
+.relation-other { border-left-color: #9b9b9b; }
+
+.table-footer {
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    border-top: 1px solid #f0f2f5;
+    display: flex;
+    justify-content: space-between;
+    background: #fafcff;
+    border-radius: 0 0 24px 24px;
+}
+
+.free-seats { color: #358856; }
+.free-seats.warning { color: #e06c6c; }
+
+.global-stats {
+    background: #fafcff;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    margin-bottom: 12px;
+}
+
+.conflict-warning {
+    color: #e06c6c;
+    font-size: 0.7rem;
+    margin-left: 8px;
+}

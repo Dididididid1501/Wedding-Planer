@@ -1,0 +1,86 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #eef2f5;
+    font-family: 'Inter', sans-serif;
+    padding: 16px 12px;
+    color: #1c1e21;
+}
+
+.tg-container {
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.tg-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+}
+
+.tg-header:hover {
+    background: #fafcff;
+}
+
+.tg-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.tg-title i {
+    font-size: 24px;
+    color: #3390ec;
+    background: #e9f2fa;
+    padding: 6px;
+    border-radius: 50%;
+}
+
+.tg-title h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.section-summary {
+    font-size: 0.8rem;
+    color: #5e6f8d;
+}
+
+.tg-badge {
+    background: #e9ecef;
+    border-radius: 40px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #5e6f8d;
+    white-space: nowrap;
+}
+
+.collapse-icon {
+    transition: transform 0.2s;
+    margin-left: auto;
+}
+
+.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.collapsed .section-content {
+    display: none;
+}
