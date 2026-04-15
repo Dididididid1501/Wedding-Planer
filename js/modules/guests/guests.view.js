@@ -139,6 +139,10 @@ export class GuestsView {
         const invited = guests.filter(g => g.invited).length;
         const relations = { 'Семья жениха': 0, 'Семья невесты': 0, 'Другое': 0 };
         let ch = 0, r = 0, w = 0, sp = 0, no = 0;
+        let zags = 0, accommodation = 0;
+        const transportCounts = { 'Не нужен': 0, 'Нужен туда': 0, 'Нужен обратно': 0, 'Туда-обратно': 0 };
+        const mealCounts = { 'Стандартное': 0, 'Веганское': 0, 'Детское': 0, 'Безглютеновое': 0 };
+
         guests.forEach(g => {
             if (relations.hasOwnProperty(g.relation)) relations[g.relation]++;
             if (g.champagne) ch++;
@@ -146,18 +150,24 @@ export class GuestsView {
             if (g.whiteWine) w++;
             if (g.spirit !== 'Нет') sp++;
             if (g.noAlcohol) no++;
+            if (g.zags) zags++;
+            if (g.accommodation) accommodation++;
+            if (transportCounts.hasOwnProperty(g.transport)) transportCounts[g.transport]++;
+            if (mealCounts.hasOwnProperty(g.meal)) mealCounts[g.meal]++;
         });
+
         stats.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card"><h4>Всего</h4><div class="stat-number">${total}</div><p>Приглашено: ${invited}</p></div>
                 <div class="stat-card"><h4>Отношение</h4><p>👑 Жених: ${relations['Семья жениха']}</p><p>👰 Невеста: ${relations['Семья невесты']}</p><p>✨ Другое: ${relations['Другое']}</p></div>
                 <div class="stat-card"><h4>Алкоголь</h4><p>🥂 Шамп: ${ch}</p><p>🍷 Крас: ${r}</p><p>🥂 Бел: ${w}</p><p>🥃 Креп: ${sp}</p><p>🚫 Не пьют: ${no}</p></div>
+                <div class="stat-card"><h4>Логистика</h4><p>🏛️ ЗАГС: ${zags}</p><p>🏨 Размещение: ${accommodation}</p><p>🚌 Туда: ${transportCounts['Нужен туда'] + transportCounts['Туда-обратно']}</p><p>🚌 Обратно: ${transportCounts['Нужен обратно'] + transportCounts['Туда-обратно']}</p></div>
+                <div class="stat-card"><h4>Питание</h4><p>🍽️ Стандарт: ${mealCounts['Стандартное']}</p><p>🥗 Веган: ${mealCounts['Веганское']}</p><p>🧒 Детское: ${mealCounts['Детское']}</p><p>🌾 Безглют: ${mealCounts['Безглютеновое']}</p></div>
             </div>
         `;
     }
 
     getTotalGuestsCount() {
-        // Вернуть общее количество гостей в state (можно получать извне)
         return this.totalCount || 0;
     }
 
@@ -166,7 +176,7 @@ export class GuestsView {
     }
 
     attachEvents() {
-        // Обработчики будут привязаны в контроллере, здесь просто сохраняем ссылки
+        // Обработчики будут привязаны в контроллере
     }
 
     // Управление блоком "Приведёт"

@@ -1,3 +1,6 @@
+// js/core/storage.js
+import { generateId } from './utils.js';
+
 // Хранилище состояния приложения (StateManager)
 class StateManager {
     constructor() {
@@ -56,8 +59,9 @@ class StateManager {
         this.ensureDemoData();
     }
 
+    // Генерация демо-данных
     ensureDemoData() {
-        // Демо-категории задач (если нет)
+        // Категории (оставляем существующие)
         if (!this.state.categories.length) {
             this.state.categories = [
                 { name: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА", color: "#ffe0b2" },
@@ -70,52 +74,189 @@ class StateManager {
             ];
         }
 
-        // Демо-задачи
+        // Генерация 30 задач (если их нет)
         if (!this.state.tasks.length) {
-            this.state.tasks = [
-                { id: this.generateId(), category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА", title: "Составление бюджета свадьбы", responsible: "Агентство", startMonth: "октябрь", deadlineMonth: "ноябрь", status: "progress", completedMonths: ["октябрь"], comment: "Уточнить у заказчиков предельную сумму" },
-                { id: this.generateId(), category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА", title: "Инспекция площадки", responsible: "Агентство", startMonth: "октябрь", deadlineMonth: "октябрь", status: "done", completedMonths: ["октябрь"], comment: "Встреча с управляющим 15.10" },
-                { id: this.generateId(), category: "ДЕКОР и ФЛОРИСТИКА", title: "Составление ТЗ для декораторов", responsible: "Агентство", startMonth: "ноябрь", deadlineMonth: "декабрь", status: "progress", completedMonths: ["ноябрь"], comment: "Собрать референсы" }
+            const taskTemplates = [
+                { title: "Составить бюджет", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Выбрать дату", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Составить список гостей", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Забронировать площадку", category: "ПЛОЩАДКА" },
+                { title: "Выбрать фотографа", category: "ПОДРЯДЧИКИ" },
+                { title: "Выбрать видеографа", category: "ПОДРЯДЧИКИ" },
+                { title: "Заказать торт", category: "ТОРТ" },
+                { title: "Купить платье невесты", category: "ОБРАЗ" },
+                { title: "Купить костюм жениха", category: "ОБРАЗ" },
+                { title: "Выбрать ведущего", category: "ПОДРЯДЧИКИ" },
+                { title: "Составить сценарий вечера", category: "СЦЕНАРИЙ" },
+                { title: "Заказать цветы", category: "ДЕКОР и ФЛОРИСТИКА" },
+                { title: "Разработать дизайн приглашений", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Отправить приглашения", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Выбрать музыкальные треки", category: "СЦЕНАРИЙ" },
+                { title: "Купить кольца", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Забронировать транспорт", category: "ПОДРЯДЧИКИ" },
+                { title: "Выбрать декор зала", category: "ДЕКОР и ФЛОРИСТИКА" },
+                { title: "Организовать рассадку гостей", category: "ПЛОЩАДКА" },
+                { title: "Заказать макияж и прическу", category: "ОБРАЗ" },
+                { title: "Составить меню", category: "ПЛОЩАДКА" },
+                { title: "Выбрать свадебный торт", category: "ТОРТ" },
+                { title: "Купить аксессуары для невесты", category: "ОБРАЗ" },
+                { title: "Купить аксессуары для жениха", category: "ОБРАЗ" },
+                { title: "Заказать фотосессию Love Story", category: "ПОДРЯДЧИКИ" },
+                { title: "Спланировать медовый месяц", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Купить подарки гостям", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" },
+                { title: "Согласовать тайминг с подрядчиками", category: "СЦЕНАРИЙ" },
+                { title: "Провести репетицию церемонии", category: "СЦЕНАРИЙ" },
+                { title: "Оплатить все счета", category: "ПРЕДВАРИТЕЛЬНАЯ ПОДГОТОВКА" }
             ];
+
+            const months = ["октябрь", "ноябрь", "декабрь", "январь", "февраль", "март", "апрель", "май", "июнь"];
+            const responsibles = ["Невеста", "Жених", "Семья", "Агентство", "Другое"];
+
+            for (let i = 0; i < 30; i++) {
+                const tpl = taskTemplates[i] || taskTemplates[i % taskTemplates.length];
+                const startMonth = months[Math.floor(Math.random() * 5)]; // первые 5 месяцев
+                const deadlineMonth = months[Math.min(months.indexOf(startMonth) + Math.floor(Math.random() * 3) + 1, months.length - 1)];
+                const statusRand = Math.random();
+                const status = statusRand < 0.3 ? 'done' : (statusRand < 0.6 ? 'progress' : 'planned');
+                const completedMonths = [];
+                if (status !== 'planned') {
+                    const startIdx = months.indexOf(startMonth);
+                    const endIdx = months.indexOf(deadlineMonth);
+                    const monthsRange = months.slice(startIdx, endIdx + 1);
+                    const count = status === 'done' ? monthsRange.length : Math.max(1, Math.floor(monthsRange.length * Math.random()));
+                    for (let j = 0; j < count; j++) completedMonths.push(monthsRange[j]);
+                }
+
+                this.state.tasks.push({
+                    id: generateId(),
+                    title: `${tpl.title} ${i+1}`,
+                    category: tpl.category,
+                    responsible: responsibles[Math.floor(Math.random() * responsibles.length)],
+                    startMonth,
+                    deadlineMonth,
+                    status,
+                    completedMonths,
+                    comment: ['Срочно', 'Уточнить детали', 'Важно', ''][Math.floor(Math.random() * 4)]
+                });
+            }
         }
 
-        // Демо-расходы
+        // Генерация 20 расходов
         if (!this.state.expenses.length) {
-            this.state.expenses = [
-                { id: this.generateId(), category: "Фотограф", planned: 50000, responsible: "Невеста", notes: "", payments: [{ date: "2025-04-15", amount: 20000, isPaid: true }, { date: "2025-05-01", amount: 20000, isPaid: false }] },
-                { id: this.generateId(), category: "Видеограф", planned: 70000, responsible: "Жених", notes: "", payments: [{ date: "2025-04-10", amount: 30000, isPaid: true }] }
+            const expenseTemplates = [
+                { category: "Фотограф", min: 40000, max: 80000 },
+                { category: "Видеограф", min: 50000, max: 100000 },
+                { category: "Ведущий", min: 30000, max: 60000 },
+                { category: "Декор зала", min: 40000, max: 120000 },
+                { category: "Цветы", min: 20000, max: 50000 },
+                { category: "Торт", min: 15000, max: 35000 },
+                { category: "Кейтеринг (еда)", min: 80000, max: 200000 },
+                { category: "Алкоголь", min: 30000, max: 80000 },
+                { category: "Платье невесты", min: 50000, max: 150000 },
+                { category: "Костюм жениха", min: 30000, max: 70000 },
+                { category: "Обручальные кольца", min: 20000, max: 60000 },
+                { category: "Аренда площадки", min: 50000, max: 150000 },
+                { category: "Музыкальное сопровождение", min: 20000, max: 50000 },
+                { category: "Приглашения", min: 5000, max: 15000 },
+                { category: "Транспорт", min: 10000, max: 30000 },
+                { category: "Макияж и прическа", min: 10000, max: 25000 },
+                { category: "Аксессуары", min: 5000, max: 20000 },
+                { category: "Подарки гостям", min: 10000, max: 30000 },
+                { category: "Фотозона", min: 15000, max: 40000 },
+                { category: "Свадебный распорядитель", min: 25000, max: 50000 }
             ];
+            const responsibles = ["Невеста", "Жених", "Организатор"];
+
+            for (let i = 0; i < 20; i++) {
+                const tpl = expenseTemplates[i];
+                const planned = Math.floor(Math.random() * (tpl.max - tpl.min) + tpl.min);
+                const paid = Math.floor(planned * (Math.random() * 0.8));
+                const payments = [];
+                if (paid > 0) {
+                    payments.push({ date: "2025-04-15", amount: paid, isPaid: true });
+                }
+                if (planned - paid > 0) {
+                    payments.push({ date: "2025-05-20", amount: planned - paid, isPaid: false });
+                }
+                this.state.expenses.push({
+                    id: generateId(),
+                    category: tpl.category,
+                    planned,
+                    responsible: responsibles[Math.floor(Math.random() * responsibles.length)],
+                    notes: ['Оплата частями', 'Нужен договор', ''][Math.floor(Math.random() * 3)],
+                    payments
+                });
+            }
         }
 
-        // Демо-гости
+        // Генерация 30 гостей
         if (!this.state.guests.length) {
-            this.state.guests = [
-                { id: this.generateId(), name: "Анна Смирнова", invited: true, zags: true, relation: "Семья невесты", table: "1", email: "", address: "", accommodation: false, transport: "Не нужен", meal: "Стандартное", dish: "Мясо", champagne: true, redWine: false, whiteWine: true, spirit: "Нет", noAlcohol: false, notes: "", conflictGroup: "", broughtBy: null },
-                { id: this.generateId(), name: "Иван Петров", invited: true, zags: true, relation: "Семья жениха", table: "1", email: "", address: "", accommodation: false, transport: "Не нужен", meal: "Стандартное", dish: "Курица", champagne: false, redWine: true, whiteWine: false, spirit: "Виски", noAlcohol: false, notes: "", conflictGroup: "", broughtBy: null },
-                { id: this.generateId(), name: "Елена Козлова", invited: true, zags: false, relation: "Другое", table: "2", email: "elena@mail.ru", address: "ул. Ленина, 5", accommodation: true, transport: "Нужен туда", meal: "Веганское", dish: "Овощи", champagne: false, redWine: false, whiteWine: false, spirit: "Нет", noAlcohol: true, notes: "Аллергия на орехи", conflictGroup: "", broughtBy: null }
-            ];
+            const firstNames = ["Александр", "Мария", "Дмитрий", "Елена", "Сергей", "Анна", "Андрей", "Ольга", "Максим", "Наталья", "Иван", "Татьяна", "Роман", "Юлия", "Владимир", "Екатерина", "Павел", "Ирина", "Артем", "Дарья", "Никита", "Анастасия", "Игорь", "Светлана", "Антон", "Виктория", "Константин", "Марина", "Алексей", "Людмила"];
+            const lastNames = ["Иванов", "Петрова", "Смирнов", "Кузнецова", "Васильев", "Новикова", "Федоров", "Морозова", "Егоров", "Степанова", "Орлов", "Зайцева", "Соловьев", "Волкова", "Зайцев", "Лебедева", "Козлов", "Белова", "Титов", "Соколова"];
+            const relations = ["Семья жениха", "Семья невесты", "Другое"];
+            const meals = ["Стандартное", "Веганское", "Детское", "Безглютеновое"];
+            const dishes = ["Мясо", "Курица", "Рыба", "Овощи", "Фрукты"];
+            const transport = ["Не нужен", "Нужен туда", "Нужен обратно", "Туда-обратно"];
+            const spirits = ["Нет", "Водка", "Коньяк", "Виски"];
+
+            for (let i = 0; i < 30; i++) {
+                const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+                const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+                const relation = relations[Math.floor(Math.random() * relations.length)];
+                const table = String(Math.floor(Math.random() * 8) + 1); // столы 1-8
+                const invited = Math.random() > 0.1;
+                const zags = Math.random() > 0.3;
+                const accommodation = Math.random() > 0.7;
+                const champagne = Math.random() > 0.4;
+                const redWine = Math.random() > 0.5;
+                const whiteWine = Math.random() > 0.5;
+                const spirit = spirits[Math.floor(Math.random() * spirits.length)];
+                const noAlcohol = Math.random() > 0.8;
+                const broughtBy = i % 5 === 0 ? "Анна Смирнова" : null; // каждый 5-й "приведён"
+
+                this.state.guests.push({
+                    id: generateId(),
+                    name: `${firstName} ${lastName}`,
+                    invited,
+                    zags,
+                    relation,
+                    table,
+                    email: Math.random() > 0.5 ? `${firstName.toLowerCase()}.${lastName.toLowerCase()}@mail.com` : '',
+                    address: Math.random() > 0.6 ? `ул. Ленина, ${Math.floor(Math.random()*100)+1}` : '',
+                    accommodation,
+                    transport: transport[Math.floor(Math.random() * transport.length)],
+                    meal: meals[Math.floor(Math.random() * meals.length)],
+                    dish: dishes[Math.floor(Math.random() * dishes.length)],
+                    champagne,
+                    redWine,
+                    whiteWine,
+                    spirit,
+                    noAlcohol,
+                    notes: ['', 'Аллергия на орехи', 'Вегетарианец', 'Не пьёт'][Math.floor(Math.random() * 4)],
+                    conflictGroup: Math.random() > 0.7 ? `группа ${Math.floor(Math.random()*3)+1}` : '',
+                    broughtBy
+                });
+            }
         }
 
-        // Демо-столы (генерируются из гостей автоматически, но если гостей нет — создадим)
+        // Синхронизация столов с номерами из гостей
         this.ensureTablesFromGuests();
     }
 
+    // Генерация столов на основе таблиц, указанных у гостей
     ensureTablesFromGuests() {
         const tableNumbers = new Set();
-        this.state.guests.forEach(g => { if (g.table && g.table.trim()) tableNumbers.add(g.table.trim()); });
-        // Сохраняем существующие настройки столов
+        this.state.guests.forEach(g => {
+            if (g.table && g.table.trim()) tableNumbers.add(g.table.trim());
+        });
         const existingMap = new Map(this.state.tables.map(t => [t.number, t]));
         this.state.tables = Array.from(tableNumbers).map(num => {
             const existing = existingMap.get(num);
-            return existing || { id: this.generateId(), number: num, capacity: 10, defaultCapacity: 10 };
+            return existing || { id: generateId(), number: num, capacity: 10, defaultCapacity: 10 };
         });
         if (this.state.tables.length === 0) {
-            this.state.tables.push({ id: this.generateId(), number: "1", capacity: 10, defaultCapacity: 10 });
+            this.state.tables.push({ id: generateId(), number: "1", capacity: 10, defaultCapacity: 10 });
         }
-    }
-
-    generateId() {
-        return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
     }
 
     // Сохранение всего состояния в localStorage
